@@ -43,9 +43,10 @@ func main() {
 
 
 	http.HandleFunc("/btcRate", func(w http.ResponseWriter, r *http.Request) {
+		cost := Cost("BTCUAH")
 		mess := map[string]interface{}{
 			"status" : "fail",
-			"message" : 0.01,
+			"BTCUAH" : cost,
 		}
 		Respond(w, http.StatusInternalServerError, mess)
 	})
