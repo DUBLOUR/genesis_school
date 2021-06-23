@@ -5,7 +5,9 @@ import (
 	"encoding/base64"
 	"encoding/csv"
 	"fmt"
+	"math/rand"
 	"os"
+	"time"
 	//    "strconv"
 	//    "reflect"
 )
@@ -23,45 +25,76 @@ func PasswordHash(password string) string {
 	return base64.URLEncoding.EncodeToString(hasher.Sum(nil))
 }
 
-func FindByEmail(usersdb *os.File, email string) (User, bool) {
+func RandomString(length int) string {
+	var letters = []rune("0123456789abcdefghijklmnopqrstuvwxyz")
+
+	rand.Seed(time.Now().UnixNano())
+	s := make([]rune, length)
+	for i := range s {
+		s[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(s)
+}
+
+func FindByEmailOrToken(email, token string) (User, bool) {
+	usersDbFilename := "/home/admin/go/genesis_school/test_task/usersdb.csv"
+
+	usersdb, err := os.OpenFile(
+		usersDbFilename,
+		os.O_RDONLY,
+		0644)
+	if err != nil {
+		return User{}, false
+	}
+
+	defer usersdb.Close()
+
 	csvLines, err := csv.NewReader(usersdb).ReadAll()
 	if err != nil {
 		fmt.Println(err)
 	}
 
 	for _, line := range csvLines {
-		if line[0] == email {
-			u := User{
-				Email:        line[0],
-				PasswordHash: line[1],
-				Token:        line[2],
-			}
+		u := User{
+			Email:        line[0],
+			PasswordHash: line[1],
+			Token:        line[2],
+		}
+		if u.Email == email || u.Token == token {
 			return u, true
 		}
 	}
 	return User{}, false
 }
 
-func FindByToken(usersdb *os.File, token string) (User, bool) {
-	csvLines, err := csv.NewReader(usersdb).ReadAll()
+func FindByEmail(email string) (User, bool) {
+	return FindByEmailOrToken(email, "")
+}
+
+func FindByToken(token string) (User, bool) {
+	return FindByEmailOrToken("", token)
+}
+
+func AppendUser(u User) error {
+	usersDbFilename := "/home/admin/go/genesis_school/test_task/usersdb.csv"
+
+	usersdb, err := os.OpenFile(
+		usersDbFilename,
+		os.O_APPEND|os.O_CREATE|os.O_WRONLY,
+		0644)
 	if err != nil {
-		fmt.Println(err)
+		return err
 	}
+	defer usersdb.Close()
 
-	for _, line := range csvLines {
-		if line[2] == token {
-			u := User{
-				Email:        line[0],
-				PasswordHash: line[1],
-				Token:        line[2],
-			}
-			return u, true
-		}
+	_, err = usersdb.Write([]byte(u.Email + "," + u.PasswordHash + "," + u.Token + "\n"))
+	if err != nil {
+		return err
 	}
-	return User{}, false
+	return nil
 }
 
-func UserCreate(email, pass string) error {
+func UserRegister(email, pass string) error {
 	if email == "" {
 		return fmt.Errorf("Incorrect email")
 	}
@@ -69,30 +102,17 @@ func UserCreate(email, pass string) error {
 	if pass == "" {
 		return fmt.Errorf("Password can't be empty")
 	}
-	passHash := PasswordHash(pass)
 
-	usersDbFilename := "/home/admin/go/genesis_school/test_task/usersdb.csv"
-
-	usersdb, err := os.OpenFile(
-		usersDbFilename,
-		os.O_APPEND|os.O_CREATE|os.O_RDWR,
-		0644)
-	if err != nil {
-		return err
-	}
-	defer usersdb.Close()
-
-	if _, has := FindByEmail(usersdb, email); has {
+	if _, has := FindByEmail(email); has {
 		return fmt.Errorf("Email already used")
 	}
 
-	u := User{
-		Email:        email,
-		PasswordHash: passHash,
-		Token:        passHash,
-	}
-	_, err = usersdb.Write([]byte(u.Email + "," + u.PasswordHash + "," + u.Token + "\n"))
-	if err != nil {
+	var u User
+	u.Email = email
+	u.PasswordHash = PasswordHash(pass)
+	u.Token = RandomString(12)
+
+	if err := AppendUser(u); err != nil {
 		return err
 	}
 
@@ -104,18 +124,8 @@ func UserLogin(email, pass string) (string, error) {
 		return "", fmt.Errorf("Incorrect email")
 	}
 
-	passHash := PasswordHash(pass)
-
-	usersDbFilename := "/home/admin/go/genesis_school/test_task/usersdb.csv"
-
-	usersdb, _ := os.OpenFile(
-		usersDbFilename,
-		os.O_RDONLY,
-		0644)
-	defer usersdb.Close()
-
-	u, has := FindByEmail(usersdb, email)
-	if !has || u.PasswordHash != passHash {
+	u, has := FindByEmail(email)
+	if !has || u.PasswordHash != PasswordHash(pass) {
 		return "", fmt.Errorf("Incorrect login")
 	}
 
@@ -127,14 +137,6 @@ func IsAvaiableToken(token string) bool {
 		return false
 	}
 
-	usersDbFilename := "/home/admin/go/genesis_school/test_task/usersdb.csv"
-
-	usersdb, _ := os.OpenFile(
-		usersDbFilename,
-		os.O_RDONLY,
-		0644)
-	defer usersdb.Close()
-
-	_, has := FindByToken(usersdb, token)
+	_, has := FindByToken(token)
 	return has
 }

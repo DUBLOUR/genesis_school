@@ -26,17 +26,16 @@ func main() {
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		mess := map[string]interface{}{
-			"status": "False",
+			"status": "Fail",
 		}
 		Respond(w, http.StatusNotFound, mess)
 	})
 
 	http.HandleFunc("/user/create", func(w http.ResponseWriter, r *http.Request) {
-
 		email := r.URL.Query().Get("email")
 		password := r.URL.Query().Get("password")
 
-		err := UserCreate(email, password)
+		err := UserRegister(email, password)
 		log.Println(r.URL.String())
 		status := "Ok"
 		if err != nil {
@@ -45,8 +44,6 @@ func main() {
 
 		mess := map[string]interface{}{
 			"status": status,
-			"mail":   email,
-			"pass":   password,
 		}
 		Respond(w, http.StatusOK, mess)
 	})
@@ -56,13 +53,14 @@ func main() {
 		password := r.URL.Query().Get("password")
 
 		token, err := UserLogin(email, password)
+		status := "Ok"
+		if err != nil {
+			status = err.Error()
+		}
 
 		mess := map[string]interface{}{
-			"status":  "Ok",
-			"message": err,
-			"mail":    email,
-			"pass":    password,
-			"token":   token,
+			"status": status,
+			"token":  token,
 		}
 		Respond(w, http.StatusOK, mess)
 	})
