@@ -17,7 +17,6 @@ func Respond(w http.ResponseWriter, httpStatus int, data map[string]interface{})
 
 func main() {
 
-	//create your file with desired read/write permissions
 	f, err := os.OpenFile("/home/admin/go/genesis_school/test_task/log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
 		log.Fatal(err)
@@ -75,12 +74,21 @@ func main() {
 		log.Println(token)
 
 		if IsAvaiableToken(token) {
-			mess := map[string]interface{}{
-				"status": "Ok",
-				"token":  token,
-				"BTCUAH": Cost("BTCUAH"),
+			cost, err := Cost("BTCUAH")
+
+			if err == nil {
+				mess := map[string]interface{}{
+					"status": "Ok",
+					"BTCUAH": cost,
+				}
+				Respond(w, http.StatusOK, mess)
+			} else {
+				mess := map[string]interface{}{
+					"status": "Internal error",
+				}
+				Respond(w, http.StatusInternalServerError, mess)
 			}
-			Respond(w, http.StatusOK, mess)
+
 			return
 		}
 
