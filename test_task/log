@@ -18,3 +18,7 @@
 2021/06/23 19:29:02 g8934inoz9p8
 2021/06/23 19:37:55 /btcRate?token=g8934inoz9p8
 2021/06/23 19:37:55 g8934inoz9p8
+2021/06/23 19:53:23 /user/create?email=d@x&password=12345543
+2021/06/23 19:53:28 /user/create?email=d@@x&password=12345543
+2021/06/23 19:53:42 /user/create?email=d@x.&password=12345543
+2021/06/23 19:53:51 /user/create?email=d@.x&password=12345543

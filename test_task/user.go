@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"math/rand"
 	"os"
+	"regexp"
 	"time"
 	//    "strconv"
 	//    "reflect"
@@ -94,8 +95,18 @@ func AppendUser(u User) error {
 	return nil
 }
 
+var emailRegex = regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
+
+func IsEmailValid(email string) bool {
+	return len(email) >= 3 && len(email) <= 255 && emailRegex.MatchString(email)
+}
+
 func UserRegister(email, pass string) error {
 	if email == "" {
+		return fmt.Errorf("Missed email")
+	}
+
+	if !IsEmailValid(email) {
 		return fmt.Errorf("Incorrect email")
 	}
 
