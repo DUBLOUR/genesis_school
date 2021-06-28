@@ -68,7 +68,15 @@ func main() {
 	})
 
 	http.HandleFunc("/btcRate", func(w http.ResponseWriter, r *http.Request) {
-		token := r.URL.Query().Get("token")
+		var urlToken, headerToken, token string
+		urlToken = r.URL.Query().Get("token")
+		headerToken = r.Header.Get("X-API-Key")
+
+		if headerToken != "" {
+			token = headerToken
+		} else {
+			token = urlToken
+		}
 
 		log.Println(r.URL.String())
 		log.Println(token)

@@ -15,4 +15,5 @@
 # vendor/
 
 test_task/main
-test_tast/log
+test_task/log
+test_task/log.log
