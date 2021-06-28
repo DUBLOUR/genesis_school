@@ -6,8 +6,10 @@ import (
 	"log"
 	"net/http"
 	"os"
-	//    "reflect"
 )
+
+const logFile string = "/home/admin/go/genesis_school/test_task/log.log"
+const dbFile string = "/home/admin/go/genesis_school/test_task/usersdb.csv"
 
 func Respond(w http.ResponseWriter, httpStatus int, data map[string]interface{}) {
 	w.Header().Add("Content-Type", "application/json")
@@ -17,12 +19,12 @@ func Respond(w http.ResponseWriter, httpStatus int, data map[string]interface{})
 
 func main() {
 
-	f, err := os.OpenFile("/home/admin/go/genesis_school/test_task/log", os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
+	loger, err := os.OpenFile(logFile, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer f.Close()
-	log.SetOutput(f)
+	defer loger.Close()
+	log.SetOutput(loger)
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		mess := map[string]interface{}{

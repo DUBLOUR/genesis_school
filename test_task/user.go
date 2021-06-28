@@ -38,19 +38,14 @@ func RandomString(length int) string {
 }
 
 func FindByEmailOrToken(email, token string) (User, bool) {
-	usersDbFilename := "/home/admin/go/genesis_school/test_task/usersdb.csv"
-
-	usersdb, err := os.OpenFile(
-		usersDbFilename,
-		os.O_RDONLY,
-		0644)
+	usersDb, err := os.OpenFile(dbFile, os.O_RDONLY, 0644)
 	if err != nil {
 		return User{}, false
 	}
 
-	defer usersdb.Close()
+	defer usersDb.Close()
 
-	csvLines, err := csv.NewReader(usersdb).ReadAll()
+	csvLines, err := csv.NewReader(usersDb).ReadAll()
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -77,18 +72,13 @@ func FindByToken(token string) (User, bool) {
 }
 
 func AppendUser(u User) error {
-	usersDbFilename := "/home/admin/go/genesis_school/test_task/usersdb.csv"
-
-	usersdb, err := os.OpenFile(
-		usersDbFilename,
-		os.O_APPEND|os.O_CREATE|os.O_WRONLY,
-		0644)
+	usersDb, err := os.OpenFile(dbFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return err
 	}
-	defer usersdb.Close()
+	defer usersDb.Close()
 
-	_, err = usersdb.Write([]byte(u.Email + "," + u.PasswordHash + "," + u.Token + "\n"))
+	_, err = usersDb.Write([]byte(u.Email + "," + u.PasswordHash + "," + u.Token + "\n"))
 	if err != nil {
 		return err
 	}

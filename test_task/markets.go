@@ -7,10 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	//    "reflect"
 )
-
-//type Price float64
 
 type BinanceResponse struct {
 	Symbol string
