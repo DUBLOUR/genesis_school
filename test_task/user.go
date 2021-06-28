@@ -10,16 +10,16 @@ import (
 	"os"
 	"regexp"
 	"time"
-	//    "strconv"
-	//    "reflect"
 )
 
 type User struct {
 	Email        string
 	PasswordHash string
-	Token        string
+	Token        string //Random string generated at registation
 }
 
+//Hashing with salt
+//Return 44-symbols string (base64)
 func PasswordHash(password string) string {
 	salt := "Yeeh_zMVk3"
 	hasher := sha512.New512_256()
@@ -38,6 +38,9 @@ func RandomString(length int) string {
 	return string(s)
 }
 
+//Open `dbFile` and look for first row (account) with given `email` or `token`
+//If account was found return that and true
+//In other case return empty user and false
 func FindByEmailOrToken(email, token string) (User, bool) {
 	usersDb, err := os.OpenFile(dbFile, os.O_RDONLY, 0644)
 	if err != nil {
@@ -51,6 +54,7 @@ func FindByEmailOrToken(email, token string) (User, bool) {
 		fmt.Println(err)
 	}
 
+	//Read csv file line-by-line
 	for _, line := range csvLines {
 		u := User{
 			Email:        line[0],
@@ -72,6 +76,7 @@ func FindByToken(token string) (User, bool) {
 	return FindByEmailOrToken("", token)
 }
 
+//Add `u` to other users in `dbFile`
 func AppendUser(u User) error {
 	usersDb, err := os.OpenFile(dbFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
@@ -92,6 +97,8 @@ func IsEmailValid(email string) bool {
 	return len(email) >= 3 && len(email) <= 255 && emailRegex.MatchString(email)
 }
 
+//Add new user to database
+//If successfull return (200, nil)
 func UserRegister(email, pass string) (httpStatus int, err error) {
 	if email == "" {
 		return http.StatusBadRequest, fmt.Errorf("Missed email")
@@ -121,6 +128,7 @@ func UserRegister(email, pass string) (httpStatus int, err error) {
 	return http.StatusOK, nil
 }
 
+//Find token for registered user in database
 func UserLogin(email, pass string) (token string, httpStatus int, err error) {
 	if email == "" {
 		return "", http.StatusBadRequest, fmt.Errorf("Incorrect email")
@@ -134,6 +142,7 @@ func UserLogin(email, pass string) (token string, httpStatus int, err error) {
 	return u.Token, http.StatusOK, nil
 }
 
+//Check an existing user with this token
 func IsAvaiableToken(token string) bool {
 	if token == "" {
 		return false

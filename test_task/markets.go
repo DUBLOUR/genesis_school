@@ -15,6 +15,7 @@ type BinanceResponse struct {
 }
 
 func Cost(currency string) (cost float64, httpStatus int, err error) {
+	//About Binance API: https://binance-docs.github.io/apidocs/
 	marketEndpoint := "https://api3.binance.com/api/v3/ticker/price?"
 	params := url.Values{}
 	params.Set("symbol", currency)

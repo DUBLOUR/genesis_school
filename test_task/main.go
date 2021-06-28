@@ -9,17 +9,19 @@ import (
 
 const logFile string = "/var/log/btc-requester/responces.log"
 const dbFile string = "/etc/btc-requester/users.csv"
+const serverPort string = ":9990"
 
 func Respond(w http.ResponseWriter, r *http.Request, httpStatus int, data map[string]interface{}) {
 	w.Header().Add("Content-Type", "application/json")
 	w.WriteHeader(httpStatus)
 	json.NewEncoder(w).Encode(data)
 
+	//Log requst and responce data
 	log.Println("REQ:", r.URL.String(), "\nSTATUS:", httpStatus, "BODY:", data)
 }
 
 func main() {
-
+	//Init log file
 	loger, err := os.OpenFile(logFile, os.O_WRONLY|os.O_CREATE|os.O_APPEND, 0644)
 	if err != nil {
 		log.Fatal(err)
@@ -27,6 +29,7 @@ func main() {
 	defer loger.Close()
 	log.SetOutput(loger)
 
+	//Common case for incorrect endpoints
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		mess := map[string]interface{}{
 			"status": "Fail",
@@ -34,6 +37,9 @@ func main() {
 		Respond(w, r, http.StatusNotFound, mess)
 	})
 
+	//Registration of new account
+	//Require `email` and `password` fields in URL
+	//Append new user in `dbFile` and return `{"status":"Ok"}` if successfull
 	http.HandleFunc("/user/create", func(w http.ResponseWriter, r *http.Request) {
 		email := r.URL.Query().Get("email")
 		password := r.URL.Query().Get("password")
@@ -42,7 +48,7 @@ func main() {
 
 		status := "Ok"
 		if err != nil {
-			status = err.Error()
+			status = err.Error() //Detail about what went wrong
 		}
 
 		mess := map[string]interface{}{
@@ -51,6 +57,9 @@ func main() {
 		Respond(w, r, httpStatus, mess)
 	})
 
+	//Get an API-token for registered users
+	//Require `email` and `password` fields in URL
+	//Return `{"status":"Ok","token":"############"}` if successfull
 	http.HandleFunc("/user/login", func(w http.ResponseWriter, r *http.Request) {
 		email := r.URL.Query().Get("email")
 		password := r.URL.Query().Get("password")
@@ -71,6 +80,9 @@ func main() {
 		Respond(w, r, httpStatus, mess)
 	})
 
+	//Get a current cost of BitCoin in UAH
+	//Require `token` in URL on `X-API-Key` in Header (more priority)
+	//Return `{"status":"Ok","BTCUAH":$$$$$$}` if successfull
 	http.HandleFunc("/btcRate", func(w http.ResponseWriter, r *http.Request) {
 		var urlToken, headerToken, token string
 		urlToken = r.URL.Query().Get("token")
@@ -82,10 +94,7 @@ func main() {
 			token = urlToken
 		}
 
-		log.Println(r.URL.String())
-		log.Println(token)
-
-		if IsAvaiableToken(token) {
+		if IsAvaiableToken(token) { //Find user in database with that token
 			cost, httpStatus, err := Cost("BTCUAH")
 
 			mess := map[string]interface{}{}
@@ -118,5 +127,5 @@ func main() {
 
 	})
 
-	http.ListenAndServe(":9990", nil)
+	http.ListenAndServe(serverPort, nil)
 }
