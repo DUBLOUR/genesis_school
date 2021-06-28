@@ -1,8 +1,8 @@
 package main
 
 import (
-	//    "fmt"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -14,7 +14,7 @@ type BinanceResponse struct {
 	Price  string
 }
 
-func Cost(currency string) (float64, error) {
+func Cost(currency string) (cost float64, httpStatus int, err error) {
 	marketEndpoint := "https://api3.binance.com/api/v3/ticker/price?"
 	params := url.Values{}
 	params.Set("symbol", currency)
@@ -22,23 +22,23 @@ func Cost(currency string) (float64, error) {
 	r, err := http.Get(marketEndpoint + params.Encode())
 	defer r.Body.Close()
 	if err != nil {
-		return 0, err
+		return 0, http.StatusInternalServerError, fmt.Errorf("Failed market connect")
 	}
 
 	respBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		return 0, err
+		return 0, http.StatusInternalServerError, fmt.Errorf("Failed market response")
 	}
 
 	respData := &BinanceResponse{}
 	if err = json.Unmarshal(respBody, respData); err != nil {
-		return 0, err
+		return 0, http.StatusInternalServerError, fmt.Errorf("Failed market response")
 	}
 
 	price, err := strconv.ParseFloat(respData.Price, 64)
 	if err != nil {
-		return 0, err
+		return 0, http.StatusInternalServerError, fmt.Errorf("Failed market response")
 	}
 
-	return price, nil
+	return price, http.StatusOK, nil
 }

@@ -6,6 +6,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"math/rand"
+	"net/http"
 	"os"
 	"regexp"
 	"time"
@@ -91,21 +92,21 @@ func IsEmailValid(email string) bool {
 	return len(email) >= 3 && len(email) <= 255 && emailRegex.MatchString(email)
 }
 
-func UserRegister(email, pass string) error {
+func UserRegister(email, pass string) (httpStatus int, err error) {
 	if email == "" {
-		return fmt.Errorf("Missed email")
+		return http.StatusBadRequest, fmt.Errorf("Missed email")
 	}
 
 	if !IsEmailValid(email) {
-		return fmt.Errorf("Incorrect email")
+		return http.StatusBadRequest, fmt.Errorf("Incorrect email")
 	}
 
 	if pass == "" {
-		return fmt.Errorf("Password can't be empty")
+		return http.StatusBadRequest, fmt.Errorf("Password can't be empty")
 	}
 
 	if _, has := FindByEmail(email); has {
-		return fmt.Errorf("Email already used")
+		return http.StatusNotAcceptable, fmt.Errorf("Email already used")
 	}
 
 	var u User
@@ -114,23 +115,23 @@ func UserRegister(email, pass string) error {
 	u.Token = RandomString(12)
 
 	if err := AppendUser(u); err != nil {
-		return err
+		return http.StatusInternalServerError, err
 	}
 
-	return nil
+	return http.StatusOK, nil
 }
 
-func UserLogin(email, pass string) (string, error) {
+func UserLogin(email, pass string) (token string, httpStatus int, err error) {
 	if email == "" {
-		return "", fmt.Errorf("Incorrect email")
+		return "", http.StatusBadRequest, fmt.Errorf("Incorrect email")
 	}
 
 	u, has := FindByEmail(email)
 	if !has || u.PasswordHash != PasswordHash(pass) {
-		return "", fmt.Errorf("Incorrect login")
+		return "", http.StatusUnauthorized, fmt.Errorf("Incorrect login")
 	}
 
-	return u.Token, nil
+	return u.Token, http.StatusOK, nil
 }
 
 func IsAvaiableToken(token string) bool {
