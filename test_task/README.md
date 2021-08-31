@@ -53,3 +53,9 @@ curl "http://localhost:9990/btcRate?token=WRONG_TOKEN"
 ```javascript
 [403] {"status":"Invalid token"}
 ```
+
+## Архитектура
+
+В идеале архитектура проекта должна быть приблизительно такой:
+
+![](https://raw.githubusercontent.com/DUBLOUR/genesis_school/master/test_task/DreamDesign.png)
